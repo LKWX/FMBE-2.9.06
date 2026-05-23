@@ -1,0 +1,2103 @@
+<html>
+ <head></head>
+ <body>
+  <title>FMBE 编辑器</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+      :root {
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #2a2a2a;
+        --bg-tertiary: #3a3a3a;
+        --text-primary: #e0e0e0;
+        --text-secondary: #b0b0b0;
+        --text-tertiary: #808080;
+        --border-color: #555555;
+        --border-light: #444444;
+        --accent-primary: #4a6a7a;
+        --accent-secondary: #6a4a5a;
+        --accent-success: #4a7a5a;
+        --accent-danger: #7a4a4a;
+        --accent-warning: #7a6a4a;
+        --code-bg: #1a1a1a;
+        --code-text: #4ade80;
+        --preview-bg: #3a3a3a;
+        --grid-color: rgba(255,255,255,0.3);
+        --axis-x: #ff4444;
+        --axis-y: #44ff44;
+        --axis-z: #4444ff;
+      }
+
+      .welcome-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        z-index: 1000;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      }
+
+      .welcome-modal-content {
+        margin-bottom: 20px;
+      }
+
+      .welcome-modal p {
+        margin-bottom: 12px;
+        line-height: 1.6;
+      }
+
+      .welcome-modal ul {
+        margin-left: 24px;
+        margin-bottom: 20px;
+      }
+
+      .welcome-modal li {
+        margin-bottom: 8px;
+      }
+
+      .welcome-modal button {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 0.2s ease;
+      }
+
+      .welcome-modal button:hover {
+        background: #5a7a8a;
+      }
+
+      [data-theme="light"] {
+        --bg-primary: #fdf8f0;
+        --bg-secondary: #fffaf0;
+        --bg-tertiary: #f5efe5;
+        --text-primary: #333333;
+        --text-secondary: #666666;
+        --text-tertiary: #999999;
+        --border-color: #8b7355;
+        --border-light: #d4c4a8;
+        --accent-primary: #5a7a8a;
+        --accent-secondary: #7a5a6a;
+        --accent-success: #5a8a6a;
+        --accent-danger: #8a5a5a;
+        --accent-warning: #8a7a5a;
+        --code-bg: #2a2a2a;
+        --code-text: #4ade80;
+        --preview-bg: #f0f0f0;
+        --grid-color: rgba(0,0,0,0.2);
+        --axis-x: #cc0000;
+        --axis-y: #00cc00;
+        --axis-z: #0000cc;
+      }
+      
+      [data-theme="pinkblue"] {
+        --bg-primary: #E6F5F7;
+        --bg-secondary: #D4F0F5;
+        --bg-tertiary: #C8E8EB;
+        --text-primary: #333333;
+        --text-secondary: #555555;
+        --text-tertiary: #777777;
+        --border-color: #A5D9C9;
+        --border-light: #C8E8EB;
+        --accent-primary: #F9C5D9;
+        --accent-secondary: #A0D8F5;
+        --accent-success: #7BC8A4;
+        --accent-danger: #E87A8A;
+        --accent-warning: #F5C87A;
+        --code-bg: #2a2a2a;
+        --code-text: #4ade80;
+        --preview-bg: #D4F0F5;
+        --grid-color: rgba(0,0,0,0.2);
+        --axis-x: #E87A8A;
+        --axis-y: #7BC8A4;
+        --axis-z: #A0D8F5;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      html, body {
+        min-height: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .tab-bar {
+        display: flex;
+        background: var(--bg-secondary);
+        border-bottom: 2px solid var(--border-color);
+        overflow-x: auto;
+        flex-shrink: 0;
+        -webkit-overflow-scrolling: touch;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .tab-bar::-webkit-scrollbar { display: none; }
+
+      .tab {
+        padding: 12px 16px;
+        cursor: pointer;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+      .tab.active { background: var(--accent-primary); color: white; }
+
+      .main-content {
+        flex: 1;
+        padding: 12px;
+        padding-bottom: 100px;
+      }
+
+      .preview-section {
+        position: relative;
+        margin-bottom: 16px;
+        border: 3px solid var(--border-color);
+        background: var(--preview-bg);
+      }
+
+      .preview-section.fixed {
+        position: sticky;
+        top: 49px;
+        z-index: 40;
+        margin-bottom: 16px;
+      }
+
+      #canvas {
+        width: 100%;
+        height: 300px;
+        display: block;
+        background: var(--preview-bg);
+        touch-action: none;
+      }
+
+      @media (max-width: 640px) {
+        #canvas { height: 250px; }
+      }
+
+      .view-mode-controls {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        display: flex;
+        gap: 4px;
+      }
+      
+      .coordinate-compass {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        width: 80px;
+        height: 80px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .compass-axis {
+        position: absolute;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 2px black;
+      }
+      
+      .compass-axis.x {
+        color: var(--axis-x);
+        right: 8px;
+      }
+      
+      .compass-axis.y {
+        color: var(--axis-y);
+        top: 8px;
+      }
+      
+      .compass-axis.z {
+        color: var(--axis-z);
+        left: 8px;
+      }
+
+      .view-mode-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 0;
+      }
+
+      .view-mode-btn:hover { background: var(--bg-tertiary); }
+      .view-mode-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+
+      .page-content { 
+        display: none; 
+        padding-top: 8px; 
+        opacity: 0; 
+        transform: translateY(10px); 
+        transition: opacity 0.2s ease, transform 0.2s ease; 
+      }
+      .page-content.active { 
+        display: block; 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+      /* 无动画的快速切换 */
+      .page-content.no-anim { 
+        transition: none; 
+        opacity: 1 !important; 
+        transform: none !important; 
+      }
+
+      .panel {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 60;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg-tertiary);
+        border-bottom: 2px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .panel-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .panel-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .panel-body { padding: 16px; }
+
+
+
+      /* 滑动条容器 - 独立滚动 */
+      .sliders-container {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 2px solid var(--border-light);
+        padding: 12px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .sliders-container::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .sliders-container::-webkit-scrollbar-track {
+        background: var(--bg-tertiary);
+      }
+
+      .sliders-container::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+      }
+
+      .btn {
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        border-radius: 0;
+      }
+
+      .btn-primary { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+      .btn-primary:hover { filter: brightness(1.1); }
+      .btn-secondary { background: var(--accent-secondary); color: white; border-color: var(--accent-secondary); position: relative; z-index: 100; touch-action: auto; cursor: pointer; pointer-events: auto; }
+      .btn-success { background: var(--accent-success); color: white; border-color: var(--accent-success); }
+      .btn-danger { background: var(--accent-danger); color: white; border-color: var(--accent-danger); }
+      .btn-warning { background: var(--accent-warning); color: white; border-color: var(--accent-warning); }
+      .btn-outline { background: transparent; color: var(--text-primary); border-color: var(--border-color); }
+      .btn-outline:hover { background: var(--bg-tertiary); }
+
+      .molang-toggle-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 0;
+      }
+
+      .molang-toggle-btn.running { background: var(--accent-danger); border-color: var(--accent-danger); }
+
+      .model-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 2px solid var(--border-light);
+      }
+
+      .model-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .model-item:last-child { border-bottom: none; }
+      .model-item:hover { background: var(--bg-tertiary); }
+      .model-item.active { background: var(--accent-primary); color: white; }
+      .model-item.active .model-tex { color: rgba(255,255,255,0.7); }
+
+      .model-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .model-name { font-weight: 600; font-size: 14px; }
+      .model-tex { font-size: 12px; color: var(--text-tertiary); }
+
+      .model-delete {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-danger);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .expand-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: var(--text-primary);
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      .expand-btn:hover {
+        background: var(--bg-tertiary);
+      }
+
+      .nested-models-container {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+      }
+
+      .tex-select {
+        padding: 8px 12px;
+        font-size: 13px;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        color: var(--text-primary);
+        cursor: pointer;
+      }
+
+      .param-table {
+        width: 100%;
+        border-spacing: 0;
+      }
+
+      .param-table tr { border-bottom: 1px solid var(--border-light); }
+      .param-table tr:last-child { border-bottom: none; }
+
+      .param-table td {
+        padding: 10px 6px;
+        vertical-align: middle;
+      }
+
+      .param-table td:first-child {
+        width: 100px;
+        padding-left: 12px;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .param-code {
+        display: block;
+        font-size: 10px;
+        color: var(--text-tertiary);
+        font-family: monospace;
+        margin-top: 2px;
+      }
+
+      .param-table td:nth-child(2) { width: 90px; }
+
+      input[type="number"] {
+        width: 80px;
+        padding: 6px 8px;
+        border: 2px solid var(--border-light);
+        font-size: 13px;
+        text-align: center;
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+        font-family: monospace;
+        border-radius: 0;
+      }
+
+      input[type="number"]:focus { outline: none; border-color: var(--accent-primary); }
+
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        background: var(--border-light);
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--accent-primary);
+        cursor: pointer;
+      }
+
+      .btn-small { padding: 4px 10px; font-size: 11px; }
+      .color-picker { width: 40px; height: 40px; border: 2px solid var(--border-color); border-radius: 0; cursor: pointer; }
+
+      .molang-editor {
+        border: 2px solid var(--border-light);
+        background: var(--bg-secondary);
+        position: relative;
+      }
+      
+      .molang-editor-header {
+        display: flex;
+        justify-content: flex-end;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-light);
+      }
+      
+      .molang-editor-actions {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .molang-editor.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        border: none;
+        background: var(--bg-secondary);
+      }
+      
+      .molang-editor.fullscreen .molang-textarea {
+        height: calc(100vh - 40px);
+        min-height: calc(100vh - 40px);
+      }
+      
+      /* 横版UI时，Molang编辑器全屏也占据整个屏幕 */
+      body.horizontal-ui .molang-editor.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        border: none;
+        background: var(--bg-secondary);
+      }
+      
+      body.horizontal-ui .molang-editor.fullscreen .molang-textarea {
+        height: calc(100vh - 40px);
+        min-height: calc(100vh - 40px);
+      }
+
+      .molang-textarea {
+        width: 100%;
+        min-height: 150px;
+        padding: 12px;
+        border: none;
+        font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+        resize: vertical;
+      }
+
+      .molang-textarea:focus { outline: none; }
+      .molang-textarea.error { background: rgba(220, 50, 50, 0.15); }
+
+      .molang-error {
+        padding: 10px 12px;
+        background: var(--accent-danger);
+        color: white;
+        font-size: 12px;
+        font-family: monospace;
+        border-top: 2px solid var(--border-color);
+      }
+
+      .molang-error:empty { display: none; }
+
+      .code-output {
+        padding: 16px;
+        background: var(--code-bg);
+        color: var(--code-text);
+        font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        min-height: 100px;
+        overflow-x: auto;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-tertiary);
+        font-size: 14px;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 16px;
+      }
+
+      .modal-overlay.active { display: flex; }
+
+      .modal {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        width: 100%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        padding: 14px;
+        background: var(--bg-tertiary);
+        border-bottom: 2px solid var(--border-color);
+      }
+
+      .modal-title { font-size: 16px; font-weight: 600; }
+      .modal-body { padding: 14px; }
+
+      .modal-footer {
+        padding: 12px 14px;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        border-top: 2px solid var(--border-color);
+      }
+
+      .input-field {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid var(--border-light);
+        font-size: 13px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+      }
+
+      .input-field:focus { outline: none; border-color: var(--accent-primary); }
+
+      .save-list {
+        max-height: 150px;
+        overflow-y: auto;
+        border: 2px solid var(--border-light);
+        margin-bottom: 12px;
+      }
+
+      /* 预设动画样式 */
+      #presetAnimationsContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .preset-animation-panel {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+      }
+
+      .preset-animation-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .timeline-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .preset-timeline-slider {
+        flex: 1;
+        height: 6px;
+        background: var(--border-light);
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+      }
+
+      .preset-timeline-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--accent-primary);
+        cursor: pointer;
+      }
+
+      .variable-display {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        background: var(--bg-tertiary);
+        padding: 4px 8px;
+        border-radius: 2px;
+        min-width: 80px;
+        text-align: center;
+      }
+
+      .preset-animation-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .preset-molang-textarea {
+        min-height: 100px;
+        font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        font-size: 12px;
+      }
+      }
+
+      .save-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-light);
+        transition: all 0.2s ease;
+        font-size: 13px;
+      }
+
+      .save-item:hover { background: var(--bg-tertiary); }
+      .save-item:last-child { border-bottom: none; }
+
+      .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .setting-item:last-child { border-bottom: none; }
+      .setting-label { font-size: 14px; }
+
+      .toggle {
+        width: 48px;
+        height: 24px;
+        background: var(--border-light);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .toggle.active { background: var(--accent-primary); }
+
+      .toggle::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        top: 2px;
+        left: 2px;
+        transition: all 0.2s ease;
+      }
+
+      .toggle.active::after { left: 26px; }
+
+      .theme-section {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-light);
+      }
+      
+      .theme-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        text-align: left;
+      }
+      
+      .theme-picker {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      
+      .theme-option {
+        position: relative;
+        width: calc(33.33% - 12px);
+        min-width: 120px;
+        max-width: 150px;
+        cursor: pointer;
+      }
+      
+      .theme-preview {
+        position: relative;
+        width: 100%;
+        padding-top: 66.67%; /* 3:2 长方形比例 */
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+      }
+      
+      .theme-color-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
+      
+      .theme-color {
+        width: 50%;
+        height: 100%;
+        transition: transform 0.2s ease;
+      }
+      
+      .theme-color-dark-1 { background: #1a1a1a; }
+      .theme-color-dark-2 { background: #3a3a3a; }
+      .theme-color-light-1 { background: #fdf8f0; }
+      .theme-color-light-2 { background: #fffaf0; }
+      .theme-color-pink { background: #F9C5D9; }
+      .theme-color-blue { background: #A0D8F5; }
+      
+      .theme-option:hover .theme-preview {
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      }
+      
+      .theme-option.active .theme-preview {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 4px rgba(74, 106, 122, 0.4);
+        transform: scale(0.9);
+      }
+      
+      .theme-checkmark {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        background: var(--accent-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+      }
+      
+      .theme-option.active .theme-checkmark {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+      }
+      
+      .theme-checkmark::after {
+        content: '';
+        width: 6px;
+        height: 12px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      
+      .theme-select-box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+      
+      .theme-option:hover .theme-select-box,
+      .theme-option:active .theme-select-box {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      
+      
+      .model-type-select {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .model-type-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 0;
+      }
+
+      .model-type-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+
+      /* 步长设置折叠栏 */
+      .step-settings-panel {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        margin: 8px 0;
+        padding: 0 16px;
+      }
+      
+      .step-settings-panel.expanded {
+        max-height: 2000px;
+        padding: 16px;
+        overflow-y: auto;
+      }
+      
+      .step-category {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-light);
+      }
+      
+      .step-category:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      
+      .step-category h4 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+      
+      .step-input-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      
+      .step-input-group:last-child {
+        margin-bottom: 0;
+      }
+      
+      .step-input-group label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        flex: 1;
+      }
+      
+      .step-input-group input {
+        width: 80px;
+        padding: 6px 8px;
+        border: 2px solid var(--border-light);
+        font-size: 13px;
+        text-align: center;
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+        font-family: monospace;
+        border-radius: 0;
+      }
+      
+      .step-input-group input:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+      }
+      
+      /* 滑动条默认纵向排版 */
+      .param-table tr {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+      
+      .param-table td {
+        padding: 4px 0;
+        width: 100% !important;
+        text-align: left;
+      }
+      
+      .param-table td:first-child {
+        font-weight: 600;
+        font-size: 14px;
+        padding-bottom: 4px;
+      }
+      
+      .param-table td:nth-child(2) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 8px;
+      }
+      
+      .param-table td:nth-child(2) input[type="number"] {
+        width: 80px;
+        flex-shrink: 0;
+      }
+      
+      .param-table td:nth-child(3) {
+        padding-top: 0;
+      }
+      
+      .param-table td:nth-child(4) {
+        text-align: right;
+        padding-top: 8px;
+      }
+      
+      @media (max-width: 640px) {
+        .tab { padding: 10px 12px; font-size: 13px; }
+        #canvas { height: 250px; }
+        .panel-header { flex-direction: column; align-items: flex-start; }
+        .panel-actions { width: 100%; }
+        .param-table td:first-child { width: 60px; padding-left: 8px; }
+        .param-table td:nth-child(2) { width: 70px; }
+        .main-content { padding: 8px; padding-bottom: 80px; }
+        .sliders-container { max-height: 300px; }
+        input[type="range"] {
+          width: 100%;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          width: 14px;
+          height: 14px;
+        }
+      }
+      
+      /* 书签样式 */
+      .bookmark-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .bookmark-item {
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .bookmark-title {
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        font-weight: bold;
+        font-size: 16px;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .bookmark-title-desc {
+        font-weight: normal;
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-left: 12px;
+      }
+      
+      .bookmark-image {
+        width: 100%;
+        padding: 8px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      
+      .bookmark-image img {
+        width: 33.33%;
+        max-height: 100px;
+        object-fit: contain;
+        border-radius: 4px;
+      }
+      
+      .bookmark-content {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+      }
+      
+      .bookmark-text {
+        background: var(--code-bg);
+        color: var(--code-text);
+        padding: 12px;
+        border-radius: 4px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 12px;
+        line-height: 1.5;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      
+      .bookmark-links {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .bookmark-link {
+        display: block;
+        padding: 10px 16px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+      
+      .bookmark-link:hover {
+        background: var(--accent-primary);
+        color: white;
+      }
+      
+      /* 更多页面特殊样式 */
+      #page-more {
+        height: 100%;
+      }
+      
+      #page-more .panel {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #page-more .panel-body {
+        flex: 1;
+        overflow-y: auto;
+      }
+      
+      /* 横版UI样式 */
+      body.horizontal-ui .main-content {
+        display: flex;
+        flex-direction: row;
+        padding: 8px;
+        gap: 8px;
+        height: calc(100vh - 50px);
+      }
+      
+      /* 隐藏横版UI时的列表选项卡 */
+      body.horizontal-ui .tab-bar .tab[data-page="list"] {
+        display: none;
+      }
+      
+      /* 左侧：预览视图 */
+      body.horizontal-ui .preview-section {
+        position: relative !important;
+        top: 0 !important;
+        width: 66.66%;
+        flex-shrink: 0;
+        height: 100%;
+      }
+      
+      body.horizontal-ui .preview-section #canvas {
+        height: 100% !important;
+      }
+      
+      /* 右侧：分为上下两部分 */
+      body.horizontal-ui .right-panel-container {
+        width: 33.33%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        height: 100%;
+      }
+      
+      /* 右上角：控制及其它功能 */
+      body.horizontal-ui .page-content-container {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      body.horizontal-ui .page-content {
+        display: none;
+        padding-bottom: 12px;
+      }
+      
+      body.horizontal-ui .page-content.active {
+        display: block;
+      }
+      
+      body.horizontal-ui .page-content .panel {
+        margin-bottom: 8px;
+      }
+      
+      /* 横版UI模式下的步长设置面板 */
+      body.horizontal-ui .step-settings-panel.expanded {
+        max-height: 800px;
+      }
+      
+      /* 横版UI下更多页面特殊处理 */
+      body.horizontal-ui #page-more.active {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
+        height: 100%;
+      }
+      
+      body.horizontal-ui #page-more .panel {
+        margin-bottom: 0;
+        flex: 1;
+      }
+      
+      /* 横版UI下，当显示更多页面时，让右侧容器占据全部空间 */
+      body.horizontal-ui.more-page-active .right-panel-container {
+        width: 100%;
+      }
+      
+      body.horizontal-ui.more-page-active .preview-section {
+        display: none;
+      }
+      
+      /* 右下角：模型列表 */
+      body.horizontal-ui .horizontal-sidebar {
+        position: relative !important;
+        width: 100% !important;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        overflow-y: auto;
+        padding: 8px;
+        flex-shrink: 0;
+        max-height: 40%;
+      }
+    /* 标签页图标样式 */
+    .tab-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      margin-right: 6px;
+      vertical-align: middle;
+      filter: invert(1);
+    }
+    
+    /* 特定图标放大处理 - 统一高度 */
+    .tab[data-page="features"] .tab-icon,
+    .tab[data-page="settings"] .tab-icon,
+    .tab[data-page="more"] .tab-icon {
+      width: 34px;
+      height: 24px;
+      object-fit: cover;
+      object-position: top;
+    }
+    .tab[data-page="output"] .tab-icon{
+      width: 30px;
+      height: 24px;
+      object-fit: cover;
+      object-position: top;
+    }
+   
+    
+    /* 标签页文本样式 */
+    .tab-text {
+      vertical-align: middle;
+      line-height: 24px;
+    }
+    
+    /* 标签页容器样式 - 确保垂直对齐 */
+    .tab {
+      display: flex;
+      align-items: center;
+    }
+    
+    /* 自定义主题设置样式 */
+    .custom-theme-settings {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+    
+    .custom-theme-title {
+      font-size: 14px;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+    
+    .color-picker-item {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .color-picker-item label {
+      min-width: 80px;
+      font-size: 13px;
+      color: #ccc;
+    }
+    
+    .color-picker {
+      width: 40px;
+      height: 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .color-text-input {
+      width: 80px;
+      padding: 6px 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+    }
+    
+    .custom-theme-settings .btn {
+      margin-right: 10px;
+      margin-top: 5px;
+    }
+    
+    /* 浅色主题下的自定义设置样式 */
+    body.light-theme .custom-theme-settings {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    body.light-theme .custom-theme-title {
+      color: #333;
+    }
+    
+    body.light-theme .color-picker-item label {
+      color: #666;
+    }
+    
+    body.light-theme .color-text-input {
+      background-color: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      color: #333;
+    }
+    </style>
+  <script id="vertShader" type="x-shader/x-vertex">#version 300 es
+in vec3 position;
+in vec3 color;
+in vec2 uv;
+in vec3 normal;
+uniform bool texLoaded;
+uniform mat4 mvpMat;
+uniform mat4 mAdjMat;
+uniform vec3 lightDir;
+out vec3 vColor;
+out vec2 vUv;
+out float vDiff;
+void main(void) {
+  gl_Position = mvpMat * vec4(position, 1.0);
+  vColor = color;
+  vUv = uv;
+  vec4 normalM = mAdjMat * vec4(normal, 0.);
+  float r = length(normalM);
+  if (r < .001) {
+    vDiff = 1.;
+  } else {
+    vec3 normal = normalize(normalM.xyz);
+    vec3 light = normalize(lightDir);
+    float diffuse = max(dot(normal, light), 0.0);
+    vDiff = 0.3 + 0.7 * diffuse;
+  }
+}
+</script>
+  <script id="fragShader" type="x-shader/x-fragment">#version 300 es
+precision mediump float;
+uniform bool texLoaded;
+uniform sampler2D tex;
+uniform vec3 customColor;
+uniform bool useCustomColor;
+in vec3 vColor;
+in vec2 vUv;
+in float vDiff;
+out vec4 fragColor;
+void main(void) {
+  if (!texLoaded) {
+    if (useCustomColor) {
+      fragColor = vec4(customColor * vec3(vDiff), 1.);
+    } else {
+      fragColor = vec4(vColor * vec3(vDiff), 1.);
+    }
+  } else {
+    fragColor = texture(tex, vUv) * vec4(vec3(vDiff), 1.);
+  }
+}
+</script>
+  <script defer></script>
+  <div class="welcome-modal" id="welcomeModal">
+    <div class="welcome-modal-content">
+      <p></p>
+      <p>注意事项及功部分能介绍:</p>
+      <ul>
+        <li>1.视图控制及视图选中是实验功能（其实是没做好(┬﹏┬)）</li>
+        <li>2."模型列表"中 长按/右键 复制粘贴对应模型</li>
+        <li>3.导入数据支持使用"输出"格式的动画指令和"文本导出"格式的JSON文本</li>
+        <li>4.Molang模拟器支持模拟简单表达式,但导入动画指令后请注意删除内置变量</li>
+        <li>5.模型组限于原版欧拉角,暂不支持整体旋转</li>
+        <li>6.支持将模型数据直接保存到本地，也可以通过分享功能导出数据</li>
+        <li>7.问题反馈🐧3835804062,有能力就修(</li>
+      </ul>
+    </div>
+    <button id="closeWelcomeModal">关闭</button>
+  </div>
+  <div class="tab-bar">
+   <div class="tab active" data-page="list">
+    <img src="/FMBE-2.9.06/p2.png" alt="列表" class="tab-icon">
+    <span class="tab-text">列表</span>
+   </div>
+   <div class="tab" data-page="control">
+    <img src="/FMBE-2.9.06/p5.png" alt="控制" class="tab-icon">
+    <span class="tab-text">控制</span>
+   </div>
+   <div class="tab" data-page="animation">
+    <img src="/FMBE-2.9.06/p4.png" alt="动画" class="tab-icon">
+    <span class="tab-text">动画</span>
+   </div>
+   <div class="tab" data-page="output">
+    <img src="/FMBE-2.9.06/像素图标 (3)w.png" alt="输出" class="tab-icon">
+    <span class="tab-text">输出</span>
+   </div>
+   <div class="tab" data-page="file">
+    <img src="/FMBE-2.9.06/p1.png" alt="文件" class="tab-icon">
+    <span class="tab-text">文件</span>
+   </div>
+   <div class="tab" data-page="features">
+    <img src="/FMBE-2.9.06/像素图标 (2w).png" alt="功能" class="tab-icon">
+    <span class="tab-text">功能</span>
+   </div>
+   <div class="tab" data-page="settings">
+    <img src="/FMBE-2.9.06/像素图标 (1w).png" alt="设置" class="tab-icon">
+    <span class="tab-text">设置</span>
+   </div>
+   <div class="tab" data-page="more">
+    <img src="/FMBE-2.9.06/像素图标 (4w).png" alt="更多" class="tab-icon">
+    <span class="tab-text">更多</span>
+   </div>
+  </div>
+  <div class="main-content">
+   <div class="preview-section fixed" id="previewSection">
+      <canvas id="canvas" width="600" height="300"></canvas>
+      <canvas id="compassCanvas" width="80" height="80" style="position: absolute; bottom: 12px; right: 12px;"></canvas>
+     </div>
+   <!-- 右侧面板容器 -->
+   <div class="right-panel-container">
+     <!-- 右上角：控制及其它功能 -->
+     <div class="page-content-container" id="pageContentContainer">
+    <div class="page-content active" id="page-list">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            模型列表
+          </div>
+          <div class="panel-actions">
+            <div class="model-type-select"><button class="model-type-btn active" data-type="block">方块</button> <button class="model-type-btn" data-type="stairs">楼梯</button> <button class="model-type-btn" data-type="slab">半砖</button> <button class="model-type-btn" data-type="banner">旗帜</button>
+            </div> <select id="defaultTex" class="tex-select"> <option value="diamond_block">钻石块</option> <option value="alex">Alex头颅</option> <option value="colored">分色图</option> <option value="custom_color">自定义颜色</option> </select> <input type="color" id="defaultCustomColor" class="color-picker" value="#ffffff" style="display: none;"> <button id="addModelBtn" class="btn btn-primary">+ 添加</button>
+          </div>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div id="modelList" class="model-list">
+            <div class="empty-state">
+              暂无模型
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-control">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            参数控制
+          </div>
+          <div class="panel-actions" style="display: flex; align-items: center; gap: 8px;"><select id="modelTexSelect" class="tex-select"> <option value="diamond_block">钻石块</option> <option value="alex">Alex头颅</option> <option value="colored">分色图</option> <option value="custom_color">自定义颜色</option> </select> <input type="color" id="customColorPicker" class="color-picker" value="#ff0000" style="display: none;">
+          </div>
+        </div>
+        <div class="panel-body" id="controlsContainer">
+          <div class="empty-state">
+            请先在列表页面选择一个模型
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-animation">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            Molang 编辑器
+          </div>
+          <div class="panel-actions"><button id="addPresetAnimationBtn" class="btn btn-secondary">添加预设动画</button> <button id="molangToggleBtn" class="btn btn-primary molang-toggle-btn"> <span>▶</span> 执行 </button>
+          </div>
+        </div>
+        <div class="panel-body" id="molangEditorContainer">
+          <div class="empty-state">
+            请先在列表页面选择一个模型
+          </div>
+        </div>
+      </div>
+      <div id="presetAnimationsContainer">
+        <!-- 预设动画编辑栏将动态添加到这里 -->
+      </div>
+      <!-- 自定义变量折叠栏 -->
+      <div class="panel">
+        <div class="panel-header" id="customVarsHeader" style="cursor: pointer;">
+          <div class="panel-title" style="display: flex; align-items: center; gap: 8px;">
+            <span id="customVarsArrow" style="transition: transform 0.2s;">▼</span>
+            显示自定义变量
+          </div>
+        </div>
+        <div class="panel-body" id="customVarsContainer" style="display: none;">
+          <div id="customVarsContent">
+            无自定义变量
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-output">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            动画指令
+          </div>
+          <div class="panel-actions">
+          <button id="copyCmdBtn" class="btn btn-primary">复制</button>
+          <button id="downloadCmdBtn" class="btn btn-secondary">导出</button>
+        </div>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <pre id="cmdOutput" class="code-output">// 动画指令将显示在这里</pre>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-file">
+      <div class="panel">
+     <div class="panel-header">
+      <div class="panel-title">
+       文件操作
+      </div>
+     </div>
+     <div class="panel-body">
+      <div style="display: flex; flex-direction: column; gap: 12px;"><button id="saveBtn" class="btn btn-primary" style="text-align: left;">💾 保存当前数据</button> <button id="importBtn" class="btn btn-secondary" style="text-align: left;">📂 导入数据</button> <button id="exportBtn" class="btn btn-success" style="text-align: left;">📋 分享数据</button>
+      </div>
+     </div>
+    </div>
+    </div>
+    <div class="page-content" id="page-features">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            功能
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="feature-section">
+            <h3 style="margin-top: 0; margin-bottom: 12px;">模型组</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;"><button id="createGroupBtn" class="btn btn-primary" style="text-align: left;">创建模型组</button> <button id="deleteGroupBtn" class="btn btn-danger" style="text-align: left;">删除模型组</button>
+            </div>
+          </div>
+          <div class="feature-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <h3 style="margin-top: 0; margin-bottom: 12px;">骨骼</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;"><button id="addBoneBtn" class="btn btn-primary" style="text-align: left;">+ 添加骨骼</button> <button id="deleteBoneBtn" class="btn btn-danger" style="text-align: left;">- 删除骨骼</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-settings">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            设置
+          </div>
+          <div class="panel-actions">
+            <button class="btn btn-primary" id="resetViewBtn">重置视图</button>
+          </div>
+        </div>
+        <div class="panel-body">
+
+          <div class="setting-item"><span class="setting-label">方块选中高光</span>
+            <div class="toggle active" id="selectionHighlightToggle"></div>
+          </div>
+          <div class="setting-item"><span class="setting-label">视图选中</span>
+            <div class="toggle" id="viewSelectionToggle"></div>
+          </div>
+          <div class="setting-item"><span class="setting-label">电脑横版UI</span>
+            <div class="toggle" id="horizontalUIToggle"></div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Molang执行速率 (FPS)</span>
+            <div class="step-input-group">
+              <input type="number" id="molangFps" min="1" max="120" step="1" value="30" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">屏幕动画</span>
+            <div class="toggle active" id="screenAnimationToggle"></div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">坐标系罗盘</span>
+            <div class="toggle active" id="compassToggle"></div>
+          </div>
+          <div class="setting-item step-settings-toggle">
+            <span class="setting-label">调整步长</span>
+            <div class="toggle" id="stepSettingsToggle"></div>
+          </div>
+          <div class="step-settings-panel" id="stepSettingsPanel">
+            <div class="step-category">
+              <h4>位置类 (pos)</h4>
+              <div class="step-input-group">
+                <label>步长:</label>
+                <input type="number" id="posStep" min="0.01" max="10" step="0.01" value="0.1" />
+              </div>
+              <div class="step-input-group">
+                <label>最小值:</label>
+                <input type="number" id="posMin" step="0.1" value="-128" />
+              </div>
+              <div class="step-input-group">
+                <label>最大值:</label>
+                <input type="number" id="posMax" step="0.1" value="128" />
+              </div>
+            </div>
+            <div class="step-category">
+              <h4>基点位置类 (basepos)</h4>
+              <div class="step-input-group">
+                <label>步长:</label>
+                <input type="number" id="baseposStep" min="0.01" max="10" step="0.01" value="0.1" />
+              </div>
+              <div class="step-input-group">
+                <label>最小值:</label>
+                <input type="number" id="baseposMin" step="0.1" value="-128" />
+              </div>
+              <div class="step-input-group">
+                <label>最大值:</label>
+                <input type="number" id="baseposMax" step="0.1" value="128" />
+              </div>
+            </div>
+            <div class="step-category">
+              <h4>旋转类 (rot)</h4>
+              <div class="step-input-group">
+                <label>步长:</label>
+                <input type="number" id="rotStep" min="0.1" max="90" step="0.1" value="0.5" />
+              </div>
+              <div class="step-input-group">
+                <label>最小值:</label>
+                <input type="number" id="rotMin" step="0.1" value="-180" />
+              </div>
+              <div class="step-input-group">
+                <label>最大值:</label>
+                <input type="number" id="rotMax" step="0.1" value="180" />
+              </div>
+            </div>
+            <div class="step-category">
+              <h4>缩放类 (scale)</h4>
+              <div class="step-input-group">
+                <label>步长:</label>
+                <input type="number" id="scaleStep" min="0.01" max="1" step="0.01" value="0.1" />
+              </div>
+              <div class="step-input-group">
+                <label>最小值:</label>
+                <input type="number" id="scaleMin" step="0.01" value="0" />
+              </div>
+              <div class="step-input-group">
+                <label>最大值:</label>
+                <input type="number" id="scaleMax" step="0.01" value="30" />
+              </div>
+            </div>
+          </div>
+          <div class="setting-item"><span class="setting-label">切换版本</span> <button class="btn btn-primary" id="versionSwitchBtn">切换到Extend版</button>
+          </div>
+          <div class="theme-section">
+            <h3 class="theme-title">主题</h3>
+            <div class="theme-picker">
+              <div class="theme-option" data-theme="dark">
+                <div class="theme-preview">
+                  <div class="theme-color-wrapper">
+                    <div class="theme-color theme-color-dark-1"></div>
+                    <div class="theme-color theme-color-dark-2"></div>
+                  </div>
+                  <div class="theme-checkmark"></div>
+                </div>
+                <div class="theme-select-box">选择</div>
+              </div>
+              <div class="theme-option" data-theme="light">
+                <div class="theme-preview">
+                  <div class="theme-color-wrapper">
+                    <div class="theme-color theme-color-light-1"></div>
+                    <div class="theme-color theme-color-light-2"></div>
+                  </div>
+                  <div class="theme-checkmark"></div>
+                </div>
+                <div class="theme-select-box">选择</div>
+              </div>
+            </div>
+            <div class="custom-theme-settings" id="customThemeSettings" style="display: none;">
+              <h4 class="custom-theme-title">自定义主题颜色</h4>
+              <div class="color-picker-item">
+                <label for="bgColorPicker">背景颜色:</label>
+                <input type="color" id="bgColorPicker" value="#1a1a1a" class="color-picker">
+                <input type="text" id="bgColorText" value="#1a1a1a" class="color-text-input">
+              </div>
+              <div class="color-picker-item">
+                <label for="btnColorPicker">按钮颜色:</label>
+                <input type="color" id="btnColorPicker" value="#4a90e2" class="color-picker">
+                <input type="text" id="btnColorText" value="#4a90e2" class="color-text-input">
+              </div>
+              <button class="btn btn-primary" id="applyCustomThemeBtn">应用自定义主题</button>
+              <button class="btn btn-secondary" id="resetCustomThemeBtn">重置</button>
+            </div>
+            <div class="theme-option" data-theme="pinkblue">
+              <div class="theme-preview">
+                <div class="theme-color-wrapper">
+                  <div class="theme-color theme-color-blue"></div>
+                  <div class="theme-color theme-color-pink"></div>
+                </div>
+                <div class="theme-checkmark"></div>
+              </div>
+              <div class="theme-select-box">选择</div>
+            </div>
+            <div class="theme-option" data-theme="custom">
+              <div class="theme-preview">
+                <div class="theme-color-wrapper">
+                  <div class="theme-color theme-color-custom-1" id="customBgColor"></div>
+                  <div class="theme-color theme-color-custom-2" id="customBtnColor"></div>
+                </div>
+                <div class="theme-checkmark"></div>
+              </div>
+              <div class="theme-select-box">自定义</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-content" id="page-more">
+      <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+              关于FMBE——[其它版本与介绍]
+              <span style="font-size: 12px; color: #999; margin-left: 10px;">以下内容均来自第三方</span>
+            </div>
+          </div>
+        <div class="panel-body">
+          <div class="bookmark-section">
+            <div class="bookmark-item">
+              <div class="bookmark-title">FMBE-基础版<span class="bookmark-title-desc">提供纵向拉伸yscale和xz平面拉伸xzscale</span></div>
+              <div class="bookmark-image">
+                <img src="/FMBE-2.9.06/cb1.jpg" alt="基础版图标">
+              </div>
+              <div class="bookmark-content">
+                <pre class="bookmark-text">### Reposition and Define FMBE Scale 
+playanimation @e[tag=wiki:fmbe] animation.player.sleeping none 0 "" controller.animation.fox.move 
+playanimation @e[tag=wiki:fmbe] animation.creeper.swelling none 0 "v.xbasepos=v.xbasepos??0;v.ybasepos=v.ybasepos??0;v.zbasepos=v.zbasepos??0;v.xpos=v.xpos??0;v.ypos=v.ypos??0;v.zpos=v.zpos??0;v.xrot=v.xrot??0;v.yrot=v.yrot??0;v.zrot=v.zrot??0;v.scale=v.scale??1;v.xzscale=v.xzscale??1;v.yscale=v.yscale??1;v.swelling_scale1=2.1385*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.swelling_scale2=2.1385*math.sqrt(v.yscale)*math.sqrt(v.scale);" wiki:scale 
+playanimation @e[tag=wiki:fmbe] animation.ender_dragon.neck_head_movement none 0 "v.head_rotation_x=0;v.head_rotation_y=0;v.head_rotation_z=0;v.head_position_x=(v.xbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.head_position_y=(10.6925+v.ybasepos*3741/8000)*math.sqrt(v.yscale)*math.sqrt(v.scale);v.head_position_z=(17.108-v.zbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);" wiki:shift_pos 
+ 
+## Define FMBE Rotation 
+### X Axis 
+playanimation @e[tag=wiki:fmbe] animation.warden.move none 0 "v.body_x_rot=90+v.xrot;v.body_z_rot=90+v.yrot;" wiki:xrot 
+### Z Axis 
+playanimation @e[tag=wiki:fmbe] animation.player.attack.rotations none 0 "v.attack_body_rot_y=-v.zrot;" wiki:zrot 
+ 
+## Define FMBE Position 
+### X Axis 
+playanimation @e[tag=wiki:fmbe] animation.parrot.moving none 0 "v.wing_flap=(16-v.xpos)/0.3;" wiki:xpos 
+### Y Axis 
+playanimation @e[tag=wiki:fmbe] animation.minecart.move.v1.0 none 0 "v.rail_offset.x=0;v.rail_offset.y=1.6485+v.ypos/16;v.rail_offset.z=0;" wiki:ypos 
+### Z Axis 
+playanimation @e[tag=wiki:fmbe] animation.parrot.dance none 0 "v.dance.x=-v.zpos;v.dance.y=0;" wiki:zpos</pre>
+                <button class="btn btn-secondary copy-btn" data-target="bookmark1">复制</button>
+              </div>
+            </div>
+            <div class="bookmark-item">
+              <div class="bookmark-title">FMBE-Extend版<span class="bookmark-title-desc">提供由extend_x/yrot控制的方向拉伸</span></div>
+              <div class="bookmark-image">
+                <img src="/FMBE-2.9.06/cb2.jpg" alt="Extend版图标">
+              </div>
+              <div class="bookmark-content">
+                <pre class="bookmark-text">/playanimation @e[tag=fmbe] animation.player.sleeping _ 0 "v.xpos=v.xpos??0;v.ypos=v.ypos??0;v.zpos=v.zpos??0;v.xrot=v.xrot??0;v.yrot=v.yrot??0;v.zrot=v.zrot??0;v.scale=v.scale??1;v.extend_scale=v.extend_scale??1;v.extend_xrot=v.extend_xrot??-90;v.extend_yrot=v.extend_yrot??0;v.xbasepos=v.xbasepos??0;v.ybasepos=v.ybasepos??0;v.zbasepos=v.zbasepos??0;v.F.r5=-math.sin(v.xrot);v.F.r2=-math.sin(v.yrot);v.F.r3=-math.sin(v.zrot);v.F.r4=math.cos(v.zrot);v.F.r8=math.cos(v.yrot);v.F.r0=-v.F.r5*v.F.r2*v.F.r3+v.F.r8*v.F.r4;v.F.r1=-v.F.r5*v.F.r2*v.F.r4-v.F.r8*v.F.r3;v.F.r6=-v.F.r5*v.F.r8*v.F.r3-v.F.r2*v.F.r4;v.F.r7=-v.F.r5*v.F.r8*v.F.r4+v.F.r2*v.F.r3;v.F.r2=v.F.r2*math.cos(v.xrot);v.F.r3=v.F.r3*math.cos(v.xrot);v.F.r4=v.F.r4*math.cos(v.xrot);v.F.r8=v.F.r8*math.cos(v.xrot);v.F.e0=math.cos(v.extend_yrot);v.F.e4=math.cos(v.extend_xrot);v.F.e5=-math.sin(v.extend_xrot);v.F.e6=math.sin(v.extend_yrot);v.F.e1=v.F.e5*v.F.e6;v.F.e2=-v.F.e4*v.F.e6;v.F.e7=-v.F.e5*v.F.e0;v.F.e8=v.F.e4*v.F.e0;v.F.p0=v.F.r0*v.F.e0+v.F.r2*v.F.e6;v.F.p1=v.F.r0*v.F.e1+v.F.r1*v.F.e4+v.F.r2*v.F.e7;v.F.p2=v.F.r0*v.F.e2+v.F.r1*v.F.e5+v.F.r2*v.F.e8;v.F.p3=v.F.r3*v.F.e0+v.F.r5*v.F.e6;v.F.p4=v.F.r3*v.F.e1+v.F.r4*v.F.e4+v.F.r5*v.F.e7;v.F.p5=v.F.r3*v.F.e2+v.F.r4*v.F.e5+v.F.r5*v.F.e8;v.F.p6=v.F.r6*v.F.e0+v.F.r8*v.F.e6;v.F.p7=v.F.r6*v.F.e1+v.F.r7*v.F.e4+v.F.r8*v.F.e7;v.F.p8=v.F.r6*v.F.e2+v.F.r7*v.F.e5+v.F.r8*v.F.e8;" controller.animation.fox.move 
+/playanimation @e[tag=fmbe] animation.creeper.swelling _ 0 "v.swelling_scale2=v.extend_scale*(v.swelling_scale1=(v.F.s=math.sqrt(32/7*v.scale)));" f1 
+/playanimation @e[tag=fmbe] animation.ender_dragon.neck_head_movement _ 0 "v.head_position_x=-16/v.F.s*((v.xpos-1)*v.F.p1+(v.ypos-1/128)*v.F.p4+v.zpos*v.F.p7+(v.xbasepos*v.F.e1+(v.ybasepos+10/7)*v.extend_scale*v.F.e4+(v.zbasepos-16/7)*v.F.e7)*v.scale);v.head_position_y=16/v.F.s*(((v.xpos-1)*v.F.p2+(v.ypos-1/128)*v.F.p5+v.zpos*v.F.p8)/v.extend_scale+(v.xbasepos*v.F.e2+(v.ybasepos+10/7)*v.extend_scale*v.F.e5+(v.zbasepos-16/7)*v.F.e8)*v.scale);v.head_position_z=16/v.F.s*((v.xpos-1)*v.F.p0+(v.ypos-1/128)*v.F.p3+v.zpos*v.F.p6+(v.xbasepos*v.F.e0+(v.zbasepos-16/7)*v.F.e6)*v.scale);v.head_rotation_x=v.F.e6?math.atan2(0,-v.F.e6):math.atan2(-v.F.e8,v.F.e5);v.head_rotation_y=math.asin(-v.F.e0);v.head_rotation_z=v.F.e6?math.atan2(-v.F.e2,-v.F.e1):0;" f2 
+/playanimation @e[tag=fmbe] animation.warden.move _ 0 "v.body_x_rot=v.F.p5||v.F.p3?math.atan2(v.F.p5,-v.F.p3):math.atan2(-v.F.p0,-v.F.p2);v.body_z_rot=v.F.p5||v.F.p3?math.atan2(-v.F.p1,v.F.p7):0;" f3 
+/playanimation @e[tag=fmbe] animation.player.attack.rotations _ 0 "v.attack_body_rot_y=math.asin(-v.F.p4);" f4</pre>
+                <div style="font-size: 12px; margin-top: 10px;">
+                  <span style="color: #999;">访问源页面：</span>
+                  <a href="https://wiki.bedrock.dev/commands/display-entities.html" target="_blank" style="color: #64B5F6; text-decoration: none;">https://wiki.bedrock.dev/commands/display-entities.html</a>
+                </div>
+                <button class="btn btn-secondary copy-btn" data-target="bookmark2">复制</button>
+              </div>
+            </div>
+            <div class="bookmark-item">
+              <div class="bookmark-title">外置旋转矩阵版<span class="bookmark-title-desc">添加了外置欧拉角，可由rotatex/y/z控制外层欧拉角旋转</span></div>
+              <div class="bookmark-image">
+                <img src="/FMBE-2.9.06/cb2.jpg" alt="外置旋转矩阵版图标">
+              </div>
+              <div class="bookmark-content">
+                <pre class="bookmark-text">/playanimation @e[tag=fmbe] animation.player.sleeping_0 "v.xpos=v.xpos??0;v.ypos=v.ypos??0;v.zpos=v.zpos??0;v.xrot=v.xrot??0;v.yrot=v.yrot??0;v.zrot=v.zrot??0;v.scale=v.scale??1;v.extend_scale=v.extend_scale??1;v.extend_xrot=v.extend_xrot??-90;v.extend_yrot=v.extend_yrot??0;v.xbasepos=v.xbasepos??0;v.ybasepos=v.ybasepos??0;v.zbasepos=v.zbasepos??0;v.rotatex=v.rotatex??0;v.rotatez=v.rotatez??0;v.rotatey=v.rotatey??0;v.F.pre_r5=-math.sin(v.rotatex);v.F.pre_r2=-math.sin(v.rotatey);v.F.pre_r3=-math.sin(v.rotatez);v.F.pre_r4=math.cos(v.rotatez);v.F.pre_r8=math.cos(v.rotatey);v.F.pre_r0=-v.F.pre_r5*v.F.pre_r2*v.F.pre_r3+v.F.pre_r8*v.F.pre_r4;v.F.pre_r1=-v.F.pre_r5*v.F.pre_r2*v.F.pre_r4-v.F.pre_r8*v.F.pre_r3;v.F.pre_r6=-v.F.pre_r5*v.F.pre_r8*v.F.pre_r3-v.F.pre_r2*v.F.pre_r4;v.F.pre_r7=-v.F.pre_r5*v.F.pre_r8*v.F.pre_r4+v.F.pre_r2*v.F.pre_r3;v.F.pre_r2=v.F.pre_r2*math.cos(v.rotatex);v.F.pre_r3=v.F.pre_r3*math.cos(v.rotatex);v.F.pre_r4=v.F.pre_r4*math.cos(v.rotatex);v.F.pre_r8=v.F.pre_r8*math.cos(v.rotatex);v.F.r5=-math.sin(v.xrot);v.F.r2=-math.sin(v.yrot);v.F.r3=-math.sin(v.zrot);v.F.r4=math.cos(v.zrot);v.F.r8=math.cos(v.yrot);v.F.r0=-v.F.r5*v.F.r2*v.F.r3+v.F.r8*v.F.r4;v.F.r1=-v.F.r5*v.F.r2*v.F.r4-v.F.r8*v.F.r3;v.F.r6=-v.F.r5*v.F.r8*v.F.r3-v.F.r2*v.F.r4;v.F.r7=-v.F.r5*v.F.r8*v.F.r4+v.F.r2*v.F.r3;v.F.r2=v.F.r2*math.cos(v.xrot);v.F.r3=v.F.r3*math.cos(v.xrot);v.F.r4=v.F.r4*math.cos(v.xrot);v.F.r8=v.F.r8*math.cos(v.xrot);v.F.e0=math.cos(v.extend_yrot);v.F.e4=math.cos(v.extend_xrot);v.F.e5=-math.sin(v.extend_xrot);v.F.e6=math.sin(v.extend_yrot);v.F.e1=v.F.e5*v.F.e6;v.F.e2=-v.F.e4*v.F.e6;v.F.e7=-v.F.e5*v.F.e0;v.F.e8=v.F.e4*v.F.e0;v.F.p0=v.F.r0*v.F.e0+v.F.r2*v.F.e6;v.F.p1=v.F.r0*v.F.e1+v.F.r1*v.F.e4+v.F.r2*v.F.e7;v.F.p2=v.F.r0*v.F.e2+v.F.r1*v.F.e5+v.F.r2*v.F.e8;v.F.p3=v.F.r3*v.F.e0+v.F.r5*v.F.e6;v.F.p4=v.F.r3*v.F.e1+v.F.r4*v.F.e4+v.F.r5*v.F.e7;v.F.p5=v.F.r3*v.F.e2+v.F.r4*v.F.e5+v.F.r5*v.F.e8;v.F.p6=v.F.r6*v.F.e0+v.F.r8*v.F.e6;v.F.p7=v.F.r6*v.F.e1+v.F.r7*v.F.e4+v.F.r8*v.F.e7;v.F.p8=v.F.r6*v.F.e2+v.F.r7*v.F.e5+v.F.r8*v.F.e8;v.F.tmp_p0=v.F.p0;v.F.tmp_p1=v.F.p1;v.F.tmp_p2=v.F.p2;v.F.tmp_p3=v.F.p3;v.F.tmp_p4=v.F.p4;v.F.tmp_p5=v.F.p5;v.F.tmp_p6=v.F.p6;v.F.tmp_p7=v.F.p7;v.F.tmp_p8=v.F.p8;v.F.p0=v.F.pre_r0*v.F.tmp_p0+v.F.pre_r1*v.F.tmp_p3+v.F.pre_r2*v.F.tmp_p6;v.F.p1=v.F.pre_r0*v.F.tmp_p1+v.F.pre_r1*v.F.tmp_p4+v.F.pre_r2*v.F.tmp_p7;v.F.p2=v.F.pre_r0*v.F.tmp_p2+v.F.pre_r1*v.F.tmp_p5+v.F.pre_r2*v.F.tmp_p8;v.F.p3=v.F.pre_r3*v.F.tmp_p0+v.F.pre_r4*v.F.tmp_p3+v.F.pre_r5*v.F.tmp_p6;v.F.p4=v.F.pre_r3*v.F.tmp_p1+v.F.pre_r4*v.F.tmp_p4+v.F.pre_r5*v.F.tmp_p7;v.F.p5=v.F.pre_r3*v.F.tmp_p2+v.F.pre_r4*v.F.tmp_p5+v.F.pre_r5*v.F.tmp_p8;v.F.p6=v.F.pre_r6*v.F.tmp_p0+v.F.pre_r7*v.F.tmp_p3+v.F.pre_r8*v.F.tmp_p6;v.F.p7=v.F.pre_r6*v.F.tmp_p1+v.F.pre_r7*v.F.tmp_p4+v.F.pre_r8*v.F.tmp_p7;v.F.p8=v.F.pre_r6*v.F.tmp_p2+v.F.pre_r7*v.F.tmp_p5+v.F.pre_r8*v.F.tmp_p8;" controller.animation.fox.move 
+/playanimation @e[tag=fmbe] animation.creeper.swelling _ 0 "v.swelling_scale2=v.extend_scale*(v.swelling_scale1=(v.F.s=math.sqrt(32/7*v.scale)));" f1 
+/playanimation @e[tag=fmbe] animation.ender_dragon.neck_head_movement _ 0 "v.head_position_x=-16/v.F.s*((v.xpos-1)*v.F.p1+(v.ypos-1/128)*v.F.p4+v.zpos*v.F.p7+(v.xbasepos*v.F.e1+(v.ybasepos+10/7)*v.extend_scale*v.F.e4+(v.zbasepos-16/7)*v.F.e7)*v.scale);v.head_position_y=16/v.F.s*(((v.xpos-1)*v.F.p2+(v.ypos-1/128)*v.F.p5+v.zpos*v.F.p8)/v.extend_scale+(v.xbasepos*v.F.e2+(v.ybasepos+10/7)*v.extend_scale*v.F.e5+(v.zbasepos-16/7)*v.F.e8)*v.scale);v.head_position_z=16/v.F.s*((v.xpos-1)*v.F.p0+(v.ypos-1/128)*v.F.p3+v.zpos*v.F.p6+(v.xbasepos*v.F.e0+(v.zbasepos-16/7)*v.F.e6)*v.scale);v.head_rotation_x=v.F.e6?math.atan2(0,-v.F.e6):math.atan2(-v.F.e8,v.F.e5);v.head_rotation_y=math.asin(-v.F.e0);v.head_rotation_z=v.F.e6?math.atan2(-v.F.e2,-v.F.e1):0;" f2 
+/playanimation @e[tag=fmbe] animation.warden.move _ 0 "v.body_x_rot=v.F.p5||v.F.p3?math.atan2(v.F.p5,-v.F.p3):math.atan2(-v.F.p0,-v.F.p2);v.body_z_rot=v.F.p5||v.F.p3?math.atan2(-v.F.p1,v.F.p7):0;" f3 
+/playanimation @e[tag=fmbe] animation.player.attack.rotations _ 0 "v.attack_body_rot_y=math.asin(-v.F.p4);" f4</pre>
+                <div style="font-size: 12px; margin-top: 10px;">
+                  <span style="color: #999;">访问源页面：</span>
+                  <a href="https://b23.tv/lf5kOut" target="_blank" style="color: #64B5F6; text-decoration: none;">https://b23.tv/lf5kOut</a>
+                  <span style="color: #999; margin-left: 10px;">注:此页面没有原指令,仅用于标明作者</span>
+                </div>
+                <button class="btn btn-secondary copy-btn" data-target="bookmark3">复制</button>
+              </div>
+            </div>
+            <div class="bookmark-item">
+              <div class="bookmark-title">更多FMBE网页工具</div>
+              <div class="bookmark-content">
+                <div class="bookmark-links">
+                  <a href="https://fairy-oracle-sanctuary.github.io/BB-CVT-FMBE/" class="bookmark-link" target="_blank">BlockBench转Molang</a>
+                  <a href="https://jannisx11.github.io/molang-grapher/" class="bookmark-link" target="_blank">Molang函数模拟</a>
+                  <a href="https://fairy-oracle-sanctuary.github.io/EX-FMBE-simulator/" class="bookmark-link" target="_blank">其它FMBE模拟器</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+     <!-- 右下角：模型列表 -->
+     <div class="horizontal-sidebar" id="horizontalSidebar" style="display: none;">
+       <div class="panel" style="border: none; background: transparent;">
+         <div class="panel-header">
+           <div class="panel-title">
+             模型列表
+           </div>
+           <div class="panel-actions">
+             <div class="model-type-select"><button class="model-type-btn active" data-type="block">方块</button> <button class="model-type-btn" data-type="stairs">楼梯</button> <button class="model-type-btn" data-type="slab">半砖</button> <button class="model-type-btn" data-type="banner">旗帜</button>
+             </div> <select id="sidebarDefaultTex" class="tex-select"> <option value="diamond_block">钻石块</option> <option value="alex">Alex头颅</option> <option value="colored">分色图</option> <option value="custom_color">自定义颜色</option> </select> <input type="color" id="sidebarDefaultCustomColor" class="color-picker" value="#ffffff" style="display: none;"> <button id="sidebarAddModelBtn" class="btn btn-primary">+ 添加</button>
+           </div>
+         </div>
+         <div class="panel-body" style="padding: 0;">
+           <div id="sidebarModelList" class="model-list">
+             <div class="empty-state">
+               暂无模型
+             </div>
+           </div>
+         </div>
+       </div>
+     </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="confirmModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title" id="confirmTitle">
+      确认
+     </div>
+    </div>
+    <div class="modal-body">
+     <p id="confirmMessage">确定要执行此操作吗？</p>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="confirmCancel">取消</button> <button class="btn btn-primary" id="confirmOk">确定</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="saveModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      保存数据
+     </div>
+    </div>
+    <div class="modal-body"><input type="text" class="input-field" id="saveNameInput" placeholder="输入保存名称">
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="saveCancel">取消</button> <button class="btn btn-primary" id="saveOk">保存</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="importModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      导入数据
+     </div>
+    </div>
+    <div class="modal-body">
+     <div class="save-list" id="importList"></div>
+     <div style="position: relative;"><textarea class="input-field" id="importTextarea" rows="4" placeholder="粘贴/导入输出格式动画指令或导出格式文本（仅txt文件或文本）"></textarea> <input type="file" id="importFileInput" accept=".txt" style="display: none;"> <button class="btn btn-secondary" id="importFileBtn" style="position: absolute; bottom: 8px; right: 8px;">📤 上传文件</button>
+     </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="importCancel">取消</button> <button class="btn btn-primary" id="importOk">导入</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="exportModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      数据分享
+     </div>
+    </div>
+    <div class="modal-body"><textarea class="input-field" id="exportTextarea" rows="10" readonly></textarea>
+    </div>
+    <div class="modal-footer" style="justify-content: space-between;"><button class="btn btn-secondary" id="exportDownload">📥 下载为TXT</button>
+     <div style="display: flex; gap: 8px;"><button class="btn btn-outline" id="exportClose">关闭</button> <button class="btn btn-primary" id="exportCopy">复制</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="createGroupModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      创建模型组
+     </div>
+    </div>
+    <div class="modal-body">
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">模型组名称</label> <input type="text" class="input-field" id="groupNameInput" placeholder="输入模型组名称">
+     </div>
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">选择模型</label>
+      <div class="save-list" id="groupModelList"></div>
+     </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="createGroupCancel">取消</button> <button class="btn btn-primary" id="createGroupOk">确定</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="copyModelModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      复制模型
+     </div>
+    </div>
+    <div class="modal-body">
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">新模型名称</label> <input type="text" class="input-field" id="copyModelName" placeholder="输入新模型名称">
+     </div>
+     <div style="margin-bottom: 12px;"><label style="display: flex; align-items: center; gap: 8px;"> <input type="checkbox" id="copyMolangCheckbox"> <span>不复制Molang</span> </label>
+     </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="copyModelCancel">取消</button> <button class="btn btn-primary" id="copyModelOk">复制</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="copyGroupModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      复制模型组
+     </div>
+    </div>
+    <div class="modal-body">
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">新模型组名称</label> <input type="text" class="input-field" id="copyGroupName" placeholder="输入新模型组名称">
+     </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="copyGroupCancel">取消</button> <button class="btn btn-primary" id="copyGroupOk">复制</button>
+    </div>
+   </div>
+  </div>
+  <div class="modal-overlay" id="presetAnimationModal">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title">
+      添加预设动画
+     </div>
+    </div>
+    <div class="modal-body">
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">预设动画名称</label> <input type="text" class="input-field" id="presetAnimationName" placeholder="输入预设动画名称">
+     </div>
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">时间轴变量</label> <input type="text" class="input-field" id="timelineVariable" placeholder="输入变量名（如 v.time 或 t.animation）">
+     </div>
+     <div style="margin-bottom: 12px;"><label style="display: block; margin-bottom: 4px;">自增步长</label> <input type="number" class="input-field" id="incrementStep" value="1" step="0.1" min="0.1">
+     </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" id="presetAnimationCancel">取消</button> <button class="btn btn-primary" id="presetAnimationOk">确定</button>
+    </div>
+   </div>
+  </div>
+  <!-- 骨骼模态框 - 选择阶段使用 -->
+  <div class="modal-overlay" id="boneModal">
+   <div class="modal" style="max-width: 800px;">
+    <div class="modal-header">
+     <div class="modal-title" id="boneModalTitle">
+      添加骨骼 - 选择父级
+     </div>
+    </div>
+    <div class="modal-body" id="boneModalBody">
+     <!-- 内容将动态填充 -->
+    </div>
+    <div class="modal-footer" id="boneModalFooter">
+     <button class="btn btn-outline" id="boneCancel">取消</button>
+    </div>
+   </div>
+  </div>
+  
+  <!-- 骨骼调试控制栏 - 底部浮动 -->
+  <div id="boneDebugPanel" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e1e; border-top: 1px solid var(--border-color); padding: 25px; z-index: 5000; box-shadow: 0 -4px 20px rgba(0,0,0,0.5);">
+   <div style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+     <span style="font-weight: bold; font-size: 18px;">骨骼调试</span>
+     <div style="display: flex; gap: 12px;">
+      <button class="btn btn-outline" id="boneDebugCancel">取消</button>
+      <button class="btn btn-primary" id="boneDebugConfirm">确定</button>
+     </div>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+     <div>
+      <label style="display: block; margin-bottom: 8px; font-size: 14px;">骨骼 X 位移</label>
+      <div style="display: flex; gap: 12px; align-items: center;">
+       <input type="range" class="input-field" id="boneBxSlider" min="-5" max="5" step="0.1" style="flex: 1; height: 40px;">
+       <input type="number" class="input-field" id="boneBxInput" style="width: 100px; height: 40px;" step="0.1">
+      </div>
+     </div>
+     
+     <div>
+      <label style="display: block; margin-bottom: 8px; font-size: 14px;">骨骼 Y 位移</label>
+      <div style="display: flex; gap: 12px; align-items: center;">
+       <input type="range" class="input-field" id="boneBySlider" min="-5" max="5" step="0.1" style="flex: 1; height: 40px;">
+       <input type="number" class="input-field" id="boneByInput" style="width: 100px; height: 40px;" step="0.1">
+      </div>
+     </div>
+     
+     <div>
+      <label style="display: block; margin-bottom: 8px; font-size: 14px;">骨骼 Z 位移</label>
+      <div style="display: flex; gap: 12px; align-items: center;">
+       <input type="range" class="input-field" id="boneBzSlider" min="-5" max="5" step="0.1" style="flex: 1; height: 40px;">
+       <input type="number" class="input-field" id="boneBzInput" style="width: 100px; height: 40px;" step="0.1">
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script src="/FMBE-2.9.06/main.js"></script>
+  <script>
+    // 欢迎窗口功能
+    document.addEventListener('DOMContentLoaded', function() {
+      const welcomeModal = document.getElementById('welcomeModal');
+      const closeButton = document.getElementById('closeWelcomeModal');
+      
+      // 检查是否已经显示过欢迎窗口
+      const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+      if (!hasSeenWelcome) {
+        welcomeModal.style.display = 'block';
+      }
+      
+      // 关闭按钮功能
+      closeButton.addEventListener('click', function() {
+        welcomeModal.style.display = 'none';
+        localStorage.setItem('hasSeenWelcome', 'true');
+      });
+      
+      // 初始化模态框按钮
+      document.getElementById('copyModelCancel').addEventListener('click', hideCopyModelModal);
+      document.getElementById('copyModelOk').addEventListener('click', copyModel);
+      
+      document.getElementById('copyGroupCancel').addEventListener('click', hideCopyGroupModal);
+      document.getElementById('copyGroupOk').addEventListener('click', copyGroup);
+      
+      document.getElementById('createGroupCancel').addEventListener('click', hideCreateGroupModal);
+      document.getElementById('createGroupOk').addEventListener('click', createModelGroup);
+    });
+  </script>
+ </body>
+</html>
