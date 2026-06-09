@@ -958,6 +958,11 @@ function updateGroupValue(groupId, varName, value) {
   const event = window.event;
   const group = modelGroups.find(g => g.id === groupId);
   if (group) {
+    // 如果变量不存在，创建它
+    if (!group.varData[varName]) {
+      group.varData[varName] = { name: varName, value: 0, min: getVarMin(varName), max: getVarMax(varName), step: getVarStep(varName) };
+    }
+    
     // 允许用户输入小数点
     if (value === '.') {
       // 保留小数点输入
@@ -1216,8 +1221,14 @@ function updateGroupValue(groupId, varName, value) {
 function resetGroupValue(groupId, varName) {
   const group = modelGroups.find(g => g.id === groupId);
   if (group) {
-    const initValue = group.varData[varName].init;
-    group.varData[varName].value = initValue;
+    const def = varDefsTemplate.find(d => d.name === varName);
+    const initValue = def ? def.init : 0;
+    // 如果变量不存在，创建它
+    if (!group.varData[varName]) {
+      group.varData[varName] = { name: varName, value: initValue, min: getVarMin(varName), max: getVarMax(varName), step: getVarStep(varName), init: initValue };
+    } else {
+      group.varData[varName].value = initValue;
+    }
     hasUnsavedChanges = true;
     renderControlPage();
     updateCmdOutput();
@@ -1295,6 +1306,11 @@ function updateModelValue(modelId, name, val) {
   const model = models.find(m => m.id === modelId);
   if (!model) return;
   
+  // 如果变量不存在，创建它
+  if (!model.varData[name]) {
+    model.varData[name] = { name, value: 0, min: getVarMin(name), max: getVarMax(name), step: getVarStep(name) };
+  }
+  
   // 允许用户输入小数点
   if (val === '.') {
     // 保留小数点输入
@@ -1334,8 +1350,15 @@ function updateModelValue(modelId, name, val) {
 function resetModelValue(modelId, name) {
   const model = models.find(m => m.id === modelId);
   if (!model) return;
-  const init = varDefsTemplate.find(d => d.name === name).init;
-  model.varData[name].value = init; hasUnsavedChanges = true;
+  const def = varDefsTemplate.find(d => d.name === name);
+  const init = def ? def.init : 0;
+  // 如果变量不存在，创建它
+  if (!model.varData[name]) {
+    model.varData[name] = { name, value: init, min: getVarMin(name), max: getVarMax(name), step: getVarStep(name) };
+  } else {
+    model.varData[name].value = init;
+  }
+  hasUnsavedChanges = true;
   const numInput = document.getElementById(name + 'N');
   const rangeInput = document.getElementById(name + 'R');
   if (numInput) numInput.value = init;
@@ -1510,10 +1533,31 @@ function renderControlPage() {
             </tr>
           `).join('')}
         </table>
+      ${currentVersion === 'extend' ? `
+      <div style="margin-top: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <button class="expand-btn" onclick="toggleExtraGroupVars(this)">▼</button>
+          <span>展开extra版变量</span>
+          <span style="color: var(--text-tertiary); font-size: 12px;">需要extra版前置,详见“更多-extra-extend版”</span>
+        </div>
+        <div class="nested-models-container" id="extraGroupVarsContainer">
+          <table class="param-table">
+            ${['rotatex', 'rotatey', 'rotatez'].map(name => `
+              <tr>
+                <td>${getParamLabel(name)}<span class="param-code">v.${name}</span></td>
+                <td><input type="number" id="${name}N" value="${group.varData[name]?.value || 0}" step="${getStep(name)}" onchange="updateGroupValue(${group.id}, '${name}', this.value)" /></td>
+                <td><input type="range" id="${name}R" min="${getMin(name)}" max="${getMax(name)}" value="${group.varData[name]?.value || 0}" step="${getStep(name)}" oninput="updateGroupValue(${group.id}, '${name}', this.value)" /></td>
+                <td style="width: 50px;"><button class="btn btn-outline btn-small" onclick="resetGroupValue(${group.id}, '${name}')">重置</button></td>
+              </tr>
+            `).join('')}
+          </table>
+        </div>
       </div>
-    `;
-    return;
-  }
+      ` : ''}
+    </div>
+  `;
+  return;
+}
   
   const model = models.find(m => m.id === activeModelId);
   if (!model) { container.innerHTML = '<div class="empty-state">请先在列表页面选择一个模型</div>'; return; }
@@ -1551,6 +1595,27 @@ function renderControlPage() {
           `;
         }).join('')}
       </table>
+      ${currentVersion === 'extend' ? `
+      <div style="margin-top: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <button class="expand-btn" onclick="toggleExtraVars(this)">▼</button>
+          <span>展开extra版变量</span>
+          <span style="color: var(--text-tertiary); font-size: 12px;">需要extra版前置,详见“更多-extra-extend版”</span>
+        </div>
+        <div class="nested-models-container" id="extraVarsContainer">
+          <table class="param-table">
+            ${['rotatex', 'rotatey', 'rotatez'].map(name => `
+              <tr>
+                <td>${getParamLabel(name)}<span class="param-code">v.${name}</span></td>
+                <td><input type="number" id="${name}N" value="${model.varData[name]?.value || 0}" step="${getStep(name)}" onchange="updateModelValue(${model.id}, '${name}', this.value)" /></td>
+                <td><input type="range" id="${name}R" min="${getMin(name)}" max="${getMax(name)}" value="${model.varData[name]?.value || 0}" step="${getStep(name)}" oninput="updateModelValue(${model.id}, '${name}', this.value)" /></td>
+                <td style="width: 50px;"><button class="btn btn-outline btn-small" onclick="resetModelValue(${model.id}, '${name}')">重置</button></td>
+              </tr>
+            `).join('')}
+          </table>
+        </div>
+      </div>
+      ` : ''}
     </div>
   `;
   
@@ -1618,7 +1683,7 @@ function validateMolang() {
 }
 
 function getParamLabel(name) {
-  const labels = { xpos: "X位置", ypos: "Y位置", zpos: "Z位置", xrot: "X旋转", yrot: "Y旋转", zrot: "Z旋转", scale: "整体缩放", xzscale: "水平缩放", yscale: "垂直缩放", xbasepos: "X基准", ybasepos: "Y基准", zbasepos: "Z基准" };
+  const labels = { xpos: "X位置", ypos: "Y位置", zpos: "Z位置", xrot: "X旋转", yrot: "Y旋转", zrot: "Z旋转", scale: "整体缩放", xzscale: "水平缩放", yscale: "垂直缩放", xbasepos: "X基准", ybasepos: "Y基准", zbasepos: "Z基准", extend_scale: "拉伸缩放", extend_xrot: "X拉伸旋转", extend_yrot: "Y拉伸旋转", rotatex: "额外X旋转", rotatey: "额外Y旋转", rotatez: "额外Z旋转" };
   return labels[name] || name;
 }
 
@@ -1628,8 +1693,34 @@ function getMin(name) {
 function getMax(name) { 
   return getVarMax(name);
 }
-function getStep(name) { 
+function getStep(name) {
   return getVarStep(name);
+}
+
+function toggleExtraVars(btn) {
+  const container = btn.parentElement.nextElementSibling;
+  if (container.style.maxHeight) {
+    container.style.maxHeight = null;
+    container.style.opacity = 0;
+    btn.textContent = '▼';
+  } else {
+    container.style.maxHeight = container.scrollHeight + 'px';
+    container.style.opacity = 1;
+    btn.textContent = '▲';
+  }
+}
+
+function toggleExtraGroupVars(btn) {
+  const container = btn.parentElement.nextElementSibling;
+  if (container.style.maxHeight) {
+    container.style.maxHeight = null;
+    container.style.opacity = 0;
+    btn.textContent = '▼';
+  } else {
+    container.style.maxHeight = container.scrollHeight + 'px';
+    container.style.opacity = 1;
+    btn.textContent = '▲';
+  }
 }
 function getTypeName(type) { const names = { block: '方块', stairs: '楼梯', slab: '半砖', banner: '旗帜' }; return names[type] || type; }
 function getTexDisplayName(name) { const names = { 'diamond_block': '钻石块', 'alex': 'Alex头颅', 'colored': '分色图', 'custom_color': '自定义颜色' }; return names[name] || name; }
@@ -2010,6 +2101,16 @@ function getModelMatrix(model) {
     mMat=mulMat(getRotX(d.xrot.value),mMat);
     mMat=mulMat(getRotY(d.yrot.value),mMat);
     
+    // 应用extra版外置旋转（相同欧拉角顺序）
+    if (d.rotatex || d.rotatey || d.rotatez) {
+      const rx = d.rotatex ? d.rotatex.value : 0;
+      const ry = d.rotatey ? d.rotatey.value : 0;
+      const rz = d.rotatez ? d.rotatez.value : 0;
+      mMat=mulMat(getRotZ(rz),mMat);
+      mMat=mulMat(getRotX(rx),mMat);
+      mMat=mulMat(getRotY(ry),mMat);
+    }
+    
     // pos: 变量值1 = 1米 = 1格, 直接使用（无偏移，中心在原点）
     // 应用模型组scale到方块xyzpos
     const effectivePosScale = group ? group.varData.scale.value : 1;
@@ -2043,6 +2144,16 @@ function getModelMatrix(model) {
     mMat=mulMat(getRotX(d.xrot.value),mMat);
     mMat=mulMat(getRotZ(d.zrot.value),mMat);
     mMat=mulMat(getRotY(d.yrot.value),mMat);
+    
+    // 应用extra版外置旋转（相同欧拉角顺序）
+    if (d.rotatex || d.rotatey || d.rotatez) {
+      const rx = d.rotatex ? d.rotatex.value : 0;
+      const ry = d.rotatey ? d.rotatey.value : 0;
+      const rz = d.rotatez ? d.rotatez.value : 0;
+      mMat=mulMat(getRotX(rx),mMat);
+      mMat=mulMat(getRotZ(rz),mMat);
+      mMat=mulMat(getRotY(ry),mMat);
+    }
     
     // 应用模型组的pos（如果有）
     if (group) {
@@ -4026,7 +4137,7 @@ function getVarStep(varName) {
     return stepConfig.basepos;
   } else if (varName.includes('pos')) {
     return stepConfig.pos;
-  } else if (varName.includes('rot')) {
+  } else if (varName.includes('rot') || varName.startsWith('rotate')) {
     return stepConfig.rot;
   } else if (varName.includes('scale')) {
     return stepConfig.scale;
@@ -4040,7 +4151,7 @@ function getVarMin(varName) {
     return stepConfig.baseposMin;
   } else if (varName.includes('pos')) {
     return stepConfig.posMin;
-  } else if (varName.includes('rot')) {
+  } else if (varName.includes('rot') || varName.startsWith('rotate')) {
     return stepConfig.rotMin;
   } else if (varName.includes('scale')) {
     return stepConfig.scaleMin;
@@ -4054,7 +4165,7 @@ function getVarMax(varName) {
     return stepConfig.baseposMax;
   } else if (varName.includes('pos')) {
     return stepConfig.posMax;
-  } else if (varName.includes('rot')) {
+  } else if (varName.includes('rot') || varName.startsWith('rotate')) {
     return stepConfig.rotMax;
   } else if (varName.includes('scale')) {
     return stepConfig.scaleMax;
